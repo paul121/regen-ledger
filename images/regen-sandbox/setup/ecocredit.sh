@@ -10,16 +10,20 @@ regen tx ecocredit create-class $ADDR1 C "Test Credit Class" --class-fee 2000000
 CLASS_ID=$(regen q ecocredit classes | jq -r '.classes[-1].id')
 echo "INFO:   Credit Class ID: $CLASS_ID"
 
-echo "INFO: Creating project $CLASS_ID-001"
-regen tx ecocredit create-project $CLASS_ID US "Horsetail Ranch" $TX_FLAGS | log_response
+echo "INFO: Creating project..."
+regen tx ecocredit create-project US "Horsetail Ranch" --class $CLASS_ID $TX_FLAGS | log_response
 
-echo "INFO: Creating credit batch $CLASS_ID-001-20200101-20210101-001"
+PROJECT_ID=$(regen q ecocredit projects | jq -r '.projects[-1].id')
+echo "INFO:   Project ID: $CLASS_ID"
+
+echo "INFO: Creating credit batch..."
 TEMPDIR=$(mktemp -d)
 trap "rm -rf $TEMPDIR" 0 2 3 15
 
 cat > $TEMPDIR/batch.json <<EOL
 {
-  "project_id": "$CLASS_ID-001",
+  "class_id": "$CLASS_ID",
+  "project_id": "PROJECT_ID",
   "issuer": "$ADDR1",
   "issuance": [
     {
@@ -43,6 +47,8 @@ cat > $TEMPDIR/batch.json <<EOL
 EOL
 
 regen tx ecocredit create-batch $TEMPDIR/batch.json $TX_FLAGS | log_response
+BATCH_ID=$(regen q ecocredit batches | jq -r '.batches[-1].id')
+echo "INFO:   Batch ID: $BATCh_ID"
 
 
 echo "INFO: Creating NCT basket (with $CLASS_ID as allowed credit class)"
